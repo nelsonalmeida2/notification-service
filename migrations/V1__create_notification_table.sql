@@ -6,3 +6,5 @@ CREATE TABLE IF NOT EXISTS notification (
     status VARCHAR(50) NOT NULL,
     sent_at TIMESTAMP DEFAULT now()
     );
+
+CREATE INDEX IF NOT EXISTS idx_notification_reservation_id ON notification(reservation_id);

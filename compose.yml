@@ -1,67 +1,63 @@
 services:
+  notification-service:
+    build: .
+    container_name: notification-service
+    ports:
+      - "8083:8083"
+    environment:
+      - PORT=8083
+      - APPLICATION_NAME=notification-service
+      - POSTGRES_DB=notification_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - notification_db
+      - flyway
+    networks:
+      - default
+      - store-network
+
   notification_db:
-    image: postgres:17
-    restart: always
-    env_file: ".env"
+    image: postgres:15-alpine
+    container_name: notification_db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=notification_db
+    ports:
+      - "5434:5432"
     volumes:
       - notification_db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
     networks:
-      - store-network
+      - default
 
   flyway:
-    image: flyway/flyway:11.12
-    depends_on:
-      notification_db:
-        condition: service_healthy
+    image: flyway/flyway
+    container_name: notification_flyway
+    command: -url=jdbc:postgresql://notification_db:5432/notification_db -user=postgres -password=postgres -connectRetries=60 migrate
     volumes:
       - ./src/main/resources/db/migration:/flyway/sql
-    command: >
-      -url=jdbc:postgresql://notification_db:5432/$POSTGRES_DB
-      -user=$POSTGRES_USER
-      -password=$POSTGRES_PASSWORD
-      migrate
-    env_file: ".env"
-    networks:
-      - store-network
-
-  notification-service:
-    build:
-      context: .
-      dockerfile: Dockerfile
     depends_on:
-      notification_db:
-        condition: service_healthy
-    env_file: ".env"
-    ports:
-      - "${PORT}:${PORT}"
-    volumes:
-      - ./src:/app/src
-      - ~/.m2:/root/.m2
+      - notification_db
     networks:
-      - store-network
+      - default
 
   pgadmin_notification:
-    image: dpage/pgadmin4:9.8.0
-    restart: always
-    env_file: ".env"
-    depends_on:
-      notification_db:
-        condition: service_healthy
+    image: dpage/pgadmin4
+    container_name: pgadmin_notification
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
     ports:
-      - "7779:80"
-    volumes:
-      - pgadmin_notification_data:/var/lib/pgadmin
+      - "5052:80"
+    depends_on:
+      - notification_db
     networks:
-      - store-network
+      - default
 
 volumes:
   notification_db_data:
-  pgadmin_notification_data:
 
 networks:
   store-network:
