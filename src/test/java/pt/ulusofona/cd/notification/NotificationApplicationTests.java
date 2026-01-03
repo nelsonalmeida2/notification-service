@@ -1,13 +1,12 @@
-package pt.ulusofona.cd.store;
+package pt.ulusofona.cd.notification;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class StoreApplicationTests {
+public class NotificationApplicationTests {
 
     @Test
     void contextLoads() {
     }
-
 }

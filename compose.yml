@@ -1,10 +1,10 @@
 services:
-  product_db:
+  notification_db:
     image: postgres:17
     restart: always
     env_file: ".env"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - notification_db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
       interval: 5s
@@ -16,12 +16,12 @@ services:
   flyway:
     image: flyway/flyway:11.12
     depends_on:
-      product_db:
+      notification_db:
         condition: service_healthy
     volumes:
-      - ./migrations:/flyway/sql
+      - ./src/main/resources/db/migration:/flyway/sql
     command: >
-      -url=jdbc:postgresql://$POSTGRES_DB:5432/$POSTGRES_DB
+      -url=jdbc:postgresql://notification_db:5432/$POSTGRES_DB
       -user=$POSTGRES_USER
       -password=$POSTGRES_PASSWORD
       migrate
@@ -29,40 +29,39 @@ services:
     networks:
       - store-network
 
-  product-service:
+  notification-service:
     build:
       context: .
       dockerfile: Dockerfile
     depends_on:
-      product_db:
+      notification_db:
         condition: service_healthy
     env_file: ".env"
     ports:
-      - "8081:8081"
-      - "9090:9090"
+      - "${PORT}:${PORT}"
     volumes:
       - ./src:/app/src
       - ~/.m2:/root/.m2
     networks:
       - store-network
 
-  pgadmin:
+  pgadmin_notification:
     image: dpage/pgadmin4:9.8.0
     restart: always
     env_file: ".env"
     depends_on:
-      product_db:
+      notification_db:
         condition: service_healthy
     ports:
-      - "7777:80"
+      - "7779:80"
     volumes:
-      - pgadmin_data:/var/lib/pgadmin
+      - pgadmin_notification_data:/var/lib/pgadmin
     networks:
       - store-network
 
 volumes:
-  db_data:
-  pgadmin_data:
+  notification_db_data:
+  pgadmin_notification_data:
 
 networks:
   store-network:
