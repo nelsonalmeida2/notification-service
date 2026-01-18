@@ -113,13 +113,6 @@ They are applied automatically when the Flyway container starts.
 
 ---
 
-## 🧪 Testing
-
-To run unit and integration tests:
-
-```bash
-./mvnw test
-```
 ## 👤 Author
 
 **Nelson Almeida**
